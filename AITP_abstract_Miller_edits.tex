@@ -93,14 +93,15 @@ design keeps (i) the trusted semantic core in C++ and (ii) the script-level
 control flow in \sml.  This makes the control flow and data structures
 available for translation to \cakeml{} \cite{CakeML} and reasoning/verification in \holfour{} \cite{HOL4}, while keeping
 the large C++ code base behind explicit assumptions.
-
-This architecture is useful both formally and pragmatically.  The original
-\axis{} scripts are readable to domain experts but have a small user base and
-little external tooling.  Translating them to \sml gives a typed, modular
-program whose data structures can be tested, documented, and connected to a
-proof development.  The point is not to replace \atlas{} mathematics, but to
+%
+% This architecture is useful both formally and pragmatically.  The original
+% \axis{} scripts are readable to domain experts but have a small user base and
+% little external tooling.  Translating them to \sml gives a typed, modular
+% program whose data structures can be tested, documented, and connected to a
+% proof development.
+The point is not to replace \atlas{} mathematics, but to
 put the fragile optimization layer into a form where equivalence theorems can
-be stated, generated, reviewed, and ultimately proved. The Codex coding was supervised by us and unit testing based on $F_4$ and other computed results.
+be stated, generated, reviewed, and ultimately proved. The Codex coding was supervised by us and used unit testing based on $F_4$ etc.
 
 \paragraph{Case study: $F_4$ FPP unitary dual verification}
 Our principal target is the \atlas{} script
