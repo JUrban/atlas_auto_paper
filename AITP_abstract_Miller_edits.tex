@@ -46,12 +46,13 @@
 The goal of this project is the formal verification of optimized computations arising in the
 unitary dual problem.  The motivating case is an
 \atlas{} workflow for determining all  unitary representations of a Lie group with infinitesimal character in the
-fundamental parallelepiped.  The production code uses substantial
+fundamental parallelepiped.  The production code uses many
 hand-written optimizations, implemented partly in the \axis{} scripting layer,
 while a slower brute-force checker gives a simpler reference computation.  Our
 goal is not (yet) to formalize the whole theory of the unitary dual, nor the whole
 \atlas{} C++ implementation, but instead to prove that the optimized script-level
-computation is functionally equivalent to the slow reference algorithm, modulo
+computation is %functionally
+equivalent to the slow reference algorithm, modulo
 \atlas{} semantic equality of parameters.  We report on an ongoing
 \texttt{.at}-to-\sml translation and a staged \holfour{}/\cakeml verification
 stack aimed at proving this fast--slow equivalence for the case of the Lie group $F_{4(4)}$, and
