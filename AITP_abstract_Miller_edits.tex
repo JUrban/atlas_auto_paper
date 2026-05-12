@@ -86,12 +86,12 @@ optimized orchestration is extensionally equivalent to the simple orchestration
 under explicit contracts for those primitives.
 
 \paragraph{Our plan: replacement architecture in SML - coded by Codex}
-We replace\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/tree/to_ht_branch_alt}} (in almost automated Codex sessions) \texttt{.at} execution by \sml programs using \polyml{} \cite{PolyML}.  A small C
+We replace\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/tree/to_ht_branch_alt}} (in almost automated Codex sessions) \axis{} (\texttt{.at}) scripts by \sml programs using \polyml{} \cite{PolyML}.  A small C
 ABI shim exposes a curated subset of the \atlas{} C++ API as a shared library,
 which is then bound in \sml using the \polyml foreign-function interface.\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/blob/to_ht_branch_alt/atlas-scripts-sml/ffi}}  The
 design keeps (i) the trusted semantic core in C++ and (ii) the script-level
 control flow in \sml.  This makes the control flow and data structures
-available for translation to \cakeml{} \cite{CakeML} and reasoning in \holfour{} \cite{HOL4}, while keeping
+available for translation to \cakeml{} \cite{CakeML} and reasoning/verification in \holfour{} \cite{HOL4}, while keeping
 the large C++ code base behind explicit assumptions.
 
 This architecture is useful both formally and pragmatically.  The original
@@ -100,7 +100,7 @@ little external tooling.  Translating them to \sml gives a typed, modular
 program whose data structures can be tested, documented, and connected to a
 proof development.  The point is not to replace \atlas{} mathematics, but to
 put the fragile optimization layer into a form where equivalence theorems can
-be stated, generated, reviewed, and ultimately proved. The Codex coding was supervised by us and unit testing based on the F4 and other computed results.
+be stated, generated, reviewed, and ultimately proved. The Codex coding was supervised by us and unit testing based on $F_4$ and other computed results.
 
 \paragraph{Case study: $F_4$ FPP unitary dual verification}
 Our principal target is the \atlas{} script
