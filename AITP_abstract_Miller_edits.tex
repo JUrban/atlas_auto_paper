@@ -105,15 +105,15 @@ be stated, generated, reviewed, and ultimately proved. The Codex coding was supe
 
 \paragraph{Case study: $F_4$ FPP unitary dual verification}
 Our principal target is the \atlas{} script
-\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.at}.  It checks a finite set
+\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.at}.\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/blob/to_ht_branch_alt/atlas-scripts/script_to_verify_F4_FPP_unitary_dual.at}}  It checks a finite set
 of \atlas{} parameters associated with facet or bottom-layer points of a
 fundamental parallelepiped for the split real form $F_{4(4)}$.  In representation
 theoretic terms, these parameters describe candidate pieces of the unitary dual
 inside a fixed finite region; in verification terms, they form the concrete
 finite domain over which fast and slow computations should agree.
 
-The modernized \sml entry point
-\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.sml} runs a fast pipeline
+Our Codex-translated \sml entry point
+\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.sml}\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/blob/to_ht_branch_alt/atlas-scripts-sml/script_to_verify_F4_FPP_unitary_dual.sml}} runs a fast pipeline
 that: (a) enumerates candidates using \atlas{} KGB elements, a precomputed
 lambda table, and folded barycenters; (b) constructs and normalizes parameters
 via FFI calls; (c) filters by standard, final, hermitian, and unitary predicates;
@@ -121,8 +121,8 @@ and (d) deduplicates using a bucketed hash set, \texttt{ParamHash}, implemented
 in \sml using \atlas{} equality and hashing.  The expected output set size for
 \(F_{4(4)}\) is \(1864\), which is checked as a regression invariant.
 
-The corresponding slow program, \texttt{SimplerVerifyF4FPP.sml}, is a direct
-translation of a brute-force checker that ranges over a large triple domain of
+The corresponding slow program, \texttt{SimplerVerifyF4FPP.sml},\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/blob/to_ht_branch_alt/atlas-scripts-sml/SimplerVerifyF4FPP.sml}} is a direct
+translation of a brute-force checker\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/blob/to_ht_branch_alt/atlas-scripts/simpler_script_to_verify_F4_FPP_unitary_dual.at}} that ranges over a large triple domain of
 \((x,\lambda,\nu)\).  Here \(x\) ranges over KGB elements, \(\lambda\) over the
 relevant integral or rational spectral parameters, and \(\nu\) over barycenters
 of facets in the fundamental parallelepiped decomposition.  For each triple the
