@@ -42,6 +42,7 @@
 \begin{document}
 \maketitle
 
+\iffalse
 \begin{abstract}
 The goal of this project is the formal verification of optimized computations arising in the
 unitary dual problem.  The motivating case is an
@@ -58,6 +59,17 @@ equivalent to the slow reference algorithm, modulo
 stack aimed at proving this fast--slow equivalence for the case of the Lie group $F_{4(4)}$, and
 scaling  to  larger computations of interest such as for $E_{8(8)}$.
 \end{abstract}
+\fi
+
+\paragraph{Goal} The goal of this project is the formal verification of optimized computations arising in the
+unitary dual problem.  The motivating case is an
+\atlas{} workflow for determining all  unitary representations of a Lie group with infinitesimal character in the
+fundamental parallelepiped.  The production code uses many
+hand-written optimizations, implemented partly in the \axis{} scripting layer,
+while a slower brute-force checker gives a simpler reference computation. We report on an ongoing
+\texttt{.at}-to-\sml translation and a staged \holfour{}/\cakeml verification
+stack aimed at proving this fast--slow equivalence for the case of the Lie group $F_{4(4)}$, and
+scaling  to  larger computations of interest such as for $E_{8(8)}$.
 
 \paragraph{Mathematical motivation:~in what ways can a group action preserve norms?}
 Lie groups and their representations (namely, the ways they act on vector spaces) appear ubiquitously in mathematics and its applications.  It was recognized already in the 1930s in Gelfand's work on dynamical systems that {\it unitary} representations -- those that preserve a norm on a Hilbert space -- play a fundamental and special role, as they were already known to do in quantum mechanics.
@@ -74,16 +86,16 @@ These lengthy calculations navigated through a maze of computational constraints
 \paragraph{Background: the \atlas{} software}
 The \atlas{} project \cite{AtlasProject} has developed powerful, specialized software for computations in representation theory; it has been specifically designed with the unitary dual problem in mind.  The core of the software consists of C++ libraries, which use custom data structures geared for Lie theory.  In addition, numerous scripts in the \axis{} interpreter language are available that expand upon the libraries, but which are much slower.  Much of the organization of the unitary dual project (enumeration, hashing, and deciding which of many possible optimizations to execute) is handled at the level of scripts.
 %
-As attractive as it would be to fully verify the code base, this is impractical since it would involve verifying most of modern representation theory.  Instead, we focus on the narrower goal of verifying that the optimizations in the unitary dual computation are mathematically appropriate and rigorous.  In particular, we assume the correctness of large parts of the software, such as its code to construct representations and check unitarity, and seek to verify the higher layer that sweeps through the space of all possible unitary representations to determine the unitary dual.
+%As attractive as it would be to fully verify the code base, this is impractical since it would involve verifying most of modern representation theory.  Instead, we focus on the narrower goal of verifying that the optimizations in the unitary dual computation are mathematically appropriate and rigorous.  In particular, we assume the correctness of large parts of the software, such as its code to construct representations and check unitarity, and seek to verify the higher layer that sweeps through the space of all possible unitary representations to determine the unitary dual.
 
-For readers from programming languages or verification, the analogy is a
-translation-validation problem for a domain-specific optimizer.  The slow
-program is the simple specification, the fast \axis{} program is the optimized
-implementation, and the
-\atlas{} C++ library supplies trusted semantic primitives.  The proof obligation
-is not that every library primitive is mathematically correct, but that the
-optimized orchestration is extensionally equivalent to the simple orchestration
-under explicit contracts for those primitives.
+% For readers from programming languages or verification, the analogy is a
+% translation-validation problem for a domain-specific optimizer.  The slow
+% program is the simple specification, the fast \axis{} program is the optimized
+% implementation, and the
+% \atlas{} C++ library supplies trusted semantic primitives.  The proof obligation
+% is not that every library primitive is mathematically correct, but that the
+% optimized orchestration is extensionally equivalent to the simple orchestration
+% under explicit contracts for those primitives.
 
 \paragraph{Our plan: replacement architecture in SML - coded by Codex}
 We replace\footnote{\url{https://github.com/JUrban/atlasofliegroups_sml1/tree/to_ht_branch_alt}} (in almost automated Codex sessions) \axis{} (\texttt{.at}) scripts by \sml programs using \polyml{} \cite{PolyML}.  A small C
@@ -130,11 +142,11 @@ slow checker constructs the associated parameter, finalizes it using \atlas{},
 tests unitarity, and reports a counterexample if the resulting unitary final
 term is missing from the fast set.
 
-This program is intentionally too slow to use as the main computation, but it is
-crucial as a reference semantics for completeness.  For larger groups, the same
-pattern applies even when the slow checker cannot be run to completion: the
-optimized program is the production computation, while the slow program gives
-the simple mathematical search whose meaning is easiest to audit.
+% This program is intentionally too slow to use as the main computation, but it is
+% crucial as a reference semantics for completeness.  For larger groups, the same
+% pattern applies even when the slow checker cannot be run to completion: the
+% optimized program is the production computation, while the slow program gives
+% the simple mathematical search whose meaning is easiest to audit.
 
 \paragraph{The ultimate theorem: fast--slow equivalence}
 The theorem we want is an optimization-correctness theorem.  At a high level,
