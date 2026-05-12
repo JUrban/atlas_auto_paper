@@ -1,0 +1,403 @@
+\documentclass{easychair}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xspace}
+\usepackage{doi}
+
+\def\atlas{\textsf{atlas}\xspace}
+\def\axis{\textsf{Axis}\xspace}
+\def\polyml{\textsf{Poly/ML}\xspace}
+\def\sml{\textsf{Standard ML}\xspace}
+\def\holfour{\textsf{HOL4}\xspace}
+\def\cakeml{\textsf{CakeML}\xspace}
+
+\newcommand{\Ufast}{U_{\mathsf{fast}}}
+\newcommand{\Uslow}{U_{\mathsf{slow}}}
+\newcommand{\Dslow}{D_{\mathsf{slow}}}
+\newcommand{\atlasEq}{\mathrel{\approx_{\atlas}}}
+\newcommand{\FPP}{\mathrm{FPP}}
+\newcommand{\KGB}{\mathrm{KGB}}
+
+\setlength{\parskip}{-0pt}
+
+\title{Autoformalizing Fast--Slow Equivalence Proofs for Atlas Computations in the Unitary Dual Problem}
+
+\author{(to be filled)}
+\institute{(to be filled)}
+\authorrunning{(to be filled)}
+\titlerunning{Fast--Slow Equivalence for Atlas Unitary-Dual Computations}
+
+\makeatletter
+\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
+  {0.9ex}   % before skip
+  {-1em}    % after skip (negative = run-in heading)
+  {\normalfont\normalsize\bfseries}}
+\makeatother
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We study the formal verification of optimized computations arising in the
+unitary dual problem.  The motivating case is an
+\atlas{} workflow for determining all  unitary representations of a Lie group with infinitesimal character in the
+fundamental parallelepiped.  The production code uses substantial
+hand-written optimizations, implemented partly in the \axis{} scripting layer,
+while a slower brute-force checker gives a simpler reference computation.  Our
+goal is not to formalize the whole theory of the unitary dual, nor the whole
+\atlas{} C++ implementation, but instead to prove that the optimized script-level
+computation is functionally equivalent to the slow reference algorithm, modulo
+\atlas{} semantic equality of parameters.  We report on an ongoing
+\texttt{.at}-to-\sml translation and a staged \holfour{}/\cakeml verification
+stack aimed at proving this fast--slow equivalence for the case of the Lie group $F_{4(4)}$, and
+scaling  to  larger computations of interest such as for $E_{8(8)}$.
+\end{abstract}
+
+\paragraph{Mathematical motivation:~in what ways can a group action preserve norms?}
+Lie groups and their representations (namely, the ways they act on vector spaces) appear ubiquitously in mathematics and its applications.  It was recognized already in the 1930s in Gelfand's work on dynamical systems that {\it unitary} representations -- those that preserve a norm on a Hilbert space -- play a fundamental and special role, as they were already known to do in quantum mechanics.
+
+Nearly a century later, this role has spread to number theory as well, since the highly mysterious and fascinating automorphic representations are always unitary.  It has been known for over half a century how to construct and classify representations in general, but the \emph{unitary dual problem} -- to completely describe the irreducible unitary represenations -- remains as the last major unsolved problem in the representation theory of Lie groups \cite{Knapp2001}.
+
+The unitary dual of select examples of  Lie groups has been computed, to much fanfare:~perhaps most notable are David Vogan's landmark results for $SL(n,\mathbb{R})$ \cite{VoganSLnR} and the split exceptional Lie group $G_{2(2)}$ \cite{VoganG2}.  The answers in these cases are subtle and intricate, and defy extrapolation to elsewhere.  One particular group stands out as the most difficult challenge, being the largest split real group not part of an infinite family:~$E_{8(8)}$, which has dimension 248.
+
+Over the last few decades progress has been made from several approaches:~applying ideas from geometric representation theory \cite{AdamsvanLeeuwenTrapaVogan2020}, string theory injected through number theory \cite{GreenMillerVanhove2015}, and Hodge theory \cite{SchmidVilonen2011,DavisMasonBrownFPP}, for example has led to results not seen directly from the classical representation-theoretic viewpoint alone.  At the same time, the \atlas project \cite{AtlasProject} created software with an {\tt is\_unitary} command that implements the algorithm in \cite{AdamsvanLeeuwenTrapaVogan2020} to decide unitarity, given enough resources.
+
+Combining methods, Adams, van Leeuwen, Miller, and Vogan have recently computed a draft candidate for the unitary dual of $E_{8(8)}$.
+These lengthy calculations navigated through a maze of computational constraints and bottlenecks, often using individual optimizations that required  proving new results in representation theory.  At this stage, it has now become a verification problem, to eliminate the risk that one of these optimizations in their scripts -- be it perhaps in how cases are enumerated, hashed, or pruned -- changes the computed set.  The goal of our present project is precisely to verify these optimizations.
+
+\paragraph{Background: the \atlas{} software}
+The \atlas{} project \cite{AtlasProject} has developed powerful, specialized software for computations in representation theory; it has been specifically designed with the unitary dual problem in mind.  The core of the software consists of C++ libraries, which use custom data structures geared for Lie theory.  In addition, numerous scripts in the \axis{} interpreter language are available that expand upon the libraries, but which are much slower.  Much of the organization of the unitary dual project (enumeration, hashing, and deciding which of many possible optimizations to execute) is handled at the level of scripts.
+
+As attractive as it would be to fully verify the code base, this is impractical since it would involve verifying most of modern representation theory.  Instead, we focus on the narrower goal of verifying that the optimizations in the unitary dual computation are mathematically appropriate and rigorous.  In particular, we assume the correctness of large parts of the software, such as its code to construct representations and check unitarity, and seek to verify the higher layer that sweeps through the space of all possible unitary representations to determine the unitary dual.
+
+For readers from programming languages or verification, the analogy is a
+translation-validation problem for a domain-specific optimizer.  The slow
+program is the simple specification, the fast \axis{} program is the optimized
+implementation, and the
+\atlas{} C++ library supplies trusted semantic primitives.  The proof obligation
+is not that every library primitive is mathematically correct, but that the
+optimized orchestration is extensionally equivalent to the simple orchestration
+under explicit contracts for those primitives.
+
+\paragraph{Our replacement architecture}
+We replace \texttt{.at} execution by \sml programs using \polyml{} \cite{PolyML}.  A small C
+ABI shim exposes a curated subset of the \atlas{} C++ API as a shared library,
+which is then bound in \sml using the \polyml foreign-function interface.  The
+design keeps (i) the trusted semantic core in C++ and (ii) the script-level
+control flow in \sml.  This makes the control flow and data structures
+available for translation to \cakeml{} \cite{CakeML} and reasoning in \holfour{} \cite{HOL4}, while keeping
+the large C++ code base behind explicit assumptions.
+
+This architecture is useful both formally and pragmatically.  The original
+\axis{} scripts are readable to domain experts but have a small user base and
+little external tooling.  Translating them to \sml gives a typed, modular
+program whose data structures can be tested, documented, and connected to a
+proof development.  The point is not to replace \atlas{} mathematics, but to
+put the fragile optimization layer into a form where equivalence theorems can
+be stated, generated, reviewed, and ultimately proved.
+
+\paragraph{Case study: $F_4$ FPP unitary dual verification}
+Our principal target is the \atlas{} script
+\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.at}.  It checks a finite set
+of \atlas{} parameters associated with facet or bottom-layer points of a
+fundamental parallelepiped for the split real form $F_{4(4)}$.  In representation
+theoretic terms, these parameters describe candidate pieces of the unitary dual
+inside a fixed finite region; in verification terms, they form the concrete
+finite domain over which fast and slow computations should agree.
+
+The modernized \sml entry point
+\texttt{script\_to\_verify\_F4\_FPP\_unitary\_dual.sml} runs a fast pipeline
+that: (a) enumerates candidates using \atlas{} KGB elements, a precomputed
+lambda table, and folded barycenters; (b) constructs and normalizes parameters
+via FFI calls; (c) filters by standard, final, hermitian, and unitary predicates;
+and (d) deduplicates using a bucketed hash set, \texttt{ParamHash}, implemented
+in \sml using \atlas{} equality and hashing.  The expected output set size for
+\(F_{4(4)}\) is \(1864\), which is checked as a regression invariant.
+
+The corresponding slow program, \texttt{SimplerVerifyF4FPP.sml}, is a direct
+translation of a brute-force checker that ranges over a large triple domain of
+\((x,\lambda,\nu)\).  Here \(x\) ranges over KGB elements, \(\lambda\) over the
+relevant integral or rational spectral parameters, and \(\nu\) over barycenters
+of facets in the fundamental parallelepiped decomposition.  For each triple the
+slow checker constructs the associated parameter, finalizes it using \atlas{},
+tests unitarity, and reports a counterexample if the resulting unitary final
+term is missing from the fast set.
+
+This program is intentionally too slow to use as the main computation, but it is
+crucial as a reference semantics for completeness.  For larger groups, the same
+pattern applies even when the slow checker cannot be run to completion: the
+optimized program is the production computation, while the slow program gives
+the simple mathematical search whose meaning is easiest to audit.
+
+\paragraph{The ultimate theorem: fast--slow equivalence}
+The theorem we want is an optimization-correctness theorem.  At a high level,
+we define:
+\begin{align*}
+\Dslow(g) &\;=\;\{(x,\lambda,\nu)\mid x\in \KGB(g),\;\lambda\in
+\mathrm{FPP\_lambdas}(g,x),\;\nu\in \mathrm{AllBarycenters}(g)\},\\
+\Uslow(g,\mathrm{dom}) &\;=\;\{\,\pi \mid \exists t\in \mathrm{dom}.\;
+\mathrm{firstFinal}(\mathrm{mkParam}(g,t))=\pi\ \wedge\
+\mathrm{isUnitary}(\pi)\,\},\\
+\Ufast(g) &\;=\;\text{the set represented by the fast program's ParamHash}.
+\end{align*}
+Because the implementation uses the \atlas{} semantic equality
+\texttt{atlas\_param\_equal} rather than pointer identity, the final statement
+is naturally phrased using a relation \(\atlasEq\) and its induced set
+equivalence.  Informally, for \(F_{4(4)}\):
+\[
+\Ufast(F_{4(4)})\;\atlasEq\;\Uslow(F_{4(4)},\Dslow(F_{4(4)}))
+\quad\text{and}\quad
+\mathrm{BottomLayerOK}(F_{4(4)},\Ufast(F_{4(4)})).
+\]
+The first conjunct says that the optimized hash-based computation has not lost
+or added any unitary final terms compared with the slow reference algorithm.
+The second records the additional bottom-layer invariant checked by the
+original scripts.  Together they connect the mathematical motivation to the
+formal task: if the \atlas{} primitives have their specified meanings, then the
+optimized script-level computation is a faithful implementation of the simple
+finite search arising from the unitary dual problem.
+
+\paragraph{Autoformalization: a top-down refinement stack in \holfour}
+The main challenge is that both programs depend on many external \atlas{} C++
+functions.  We therefore structure the proof as a refinement stack.  First,
+\holfour theories define the abstract sets and predicates above, treating
+\atlas{} operations as uninterpreted functions equipped with explicit
+contracts.  Second, we prove algorithmic skeleton lemmas about the slow checker
+as a list fold searching for missing witnesses.  Third, we reduce the fast
+checker to obligations about domain pruning and witnessing, correctness of the
+\texttt{ParamHash} set view, and correctness of the bottom-layer traversal.
+Finally, we keep an explicit inventory of the remaining bridge obligations that
+connect actual \sml execution to the abstract predicates.
+
+This top-down organization is important.  It gives a stable end-to-end theorem
+statement early, even while some low-level bridges remain assumptions.  Each
+optimization can then be isolated as a local equivalence or refinement lemma.
+For example, a pruning rule need not be justified by re-running the whole
+computation; it is enough to prove that every discarded case is represented by
+an already-covered witness or is mathematically known not to contribute a
+unitary final term.  This is the core reason the project is plausible even for
+large groups: we verify the correctness of the optimization principles rather
+than replaying the entire slow computation.
+
+\paragraph{Translator plan: discharging imperative obligations in \cakeml}
+The most proof-intensive pure component is the hash-set representation used by
+the fast program.  We develop a \cakeml monadic model of \texttt{ParamHash} and
+prove its representation and invariant lemmas: lookup and insert correctness,
+bucket discipline, and membership modulo \(\atlasEq\).  The \cakeml translator
+provides a route to connect executable ML code to these lemmas, and the
+\holfour refinement stack is designed so that this evidence can be plugged in
+without changing the top-level statement.
+
+\paragraph{Auto-translation and AI assistance}
+The \texttt{.at}-to-\sml translation is large and repetitive, but sensitive to
+subtle semantic details, including coordinate conventions, normalization,
+finalization, and equality.  We use an agentic workflow to translate scripts
+into a compilable and documented \sml module graph, add small FFI bindings and
+tests as needed, and generate the \holfour/\cakeml refinement skeletons and
+goal inventories.  The intended output is not merely a working \sml replacement
+for a legacy script, but an automatically maintained specification of what has
+been proved and what remains as an explicit contract.  This is also where LLM
+assistance is most useful: the model is not trusted for mathematical
+correctness, but used to accelerate translation, documentation, test generation,
+and proof-obligation discovery, all of which are checked by compilation,
+execution, or theorem proving.
+
+\paragraph{Status and outlook}
+The fast \sml verifier for \(F_{4(4)}\) is functional and checks the expected set
+of \(1864\) parameters.  The slow checker is translated and supports bounded
+sampling.  On the formal side, the end-to-end theorem shape is fixed, the key
+list/set skeleton lemmas are in place, and the remaining assumptions are
+isolated as explicit contracts and bridge goals.  Next steps are to strengthen
+the contracts around \atlas{} equality and hashing, discharge \texttt{ParamHash}
+obligations via \cakeml proofs, and replace bridge assumptions by proved
+statements or validated external specifications.  The longer-term goal is to
+scale from the \(F_4\) test case to the larger rank-eight computations, where
+running the slow checker directly is infeasible but verifying the correctness
+of the optimizations is most valuable.
+
+\paragraph{Contributions}
+In summary, this paper proposes a verification target and architecture for a
+specific class of large-scale mathematical computations.  The contributions are:
+(i) a fast--slow equivalence formulation for \atlas{} unitary-dual scripts;
+(ii) an \axis{}-to-\sml replacement architecture exposing script-level control
+flow to proof tools; (iii) a staged \holfour/\cakeml proof plan separating
+trusted \atlas{} semantics from verified optimization logic; and (iv) a concrete
+\(F_4\) case study intended as a stepping stone toward the rank-eight Atlas
+computations.
+
+\appendix
+
+\section{Reference and optimized Atlas workflows}
+
+This appendix records the computational shape motivating the theorem above.
+For the \(F_4\) test case, the optimized workflow loads precomputed expected
+unitary parameters and runs the main \atlas{} command
+\[
+\texttt{FPP\_unitary\_hash\_bottom\_layer(G)}.
+\]
+The command computes the relevant bottom-layer contribution to the unitary dual
+and stores the result in a hash table.  A short wrapper can turn this into a
+Boolean verification script by checking that no new unitary representation is
+found beyond the expected list.
+
+The slow reference workflow is a direct exhaustive checker.  In schematic form,
+it is:
+\begin{verbatim}
+set G=F4_s
+set all_barycenters_of_facets = FPP_barycenters(G,-1).##
+<F4_FPP_points.at
+
+for x in KGB(G) do
+  for lambda in FPP_lambdas(x) do
+    for nu in all_barycenters_of_facets do
+      let pi = first_param(finalize(parameter(x,lambda,nu))) in
+        if is_unitary(pi)=true
+           and big_unitary_hash.long_match(pi,0)=-1
+        then print("IT'S ALL WRONG!!!") fi
+    od
+  od
+od
+\end{verbatim}
+The point of this script is not speed but clarity: it directly loops over the
+parameter data \((x,\lambda,\nu)\), finalizes the corresponding representation,
+tests unitarity, and checks membership in the expected set.  Some parts of the
+current slow script, notably the generation of \texttt{FPP\_lambdas}, may still
+use mild pre-processing.  In the proof architecture this appears as a separate
+domain-completeness obligation: the lambda generator must cover every parameter
+that the mathematical reference domain requires.
+
+\section{Why the verification target is optimization correctness}
+
+The full unitary-dual computation uses exact arithmetic and mathematically
+specified tests, but the practical implementation differs substantially from the
+naive enumeration.  The optimized code may avoid facets, reuse hash-table
+information, exploit nonunitarity implications, or replace a direct test by a
+mathematically equivalent shortcut.  Each optimization is intended to preserve
+the final set, but each also creates a possible implementation error.
+
+The theorem we seek is therefore not primarily a compiler-correctness theorem
+for C++ or a formalization of all background representation theory.  It is a
+script-level equivalence theorem:
+\[
+\forall g\in \mathcal{G}.\quad
+\Ufast(g)\;\atlasEq\;\Uslow(g,\Dslow(g)),
+\]
+where \(\mathcal{G}\) is the relevant family of real forms.  For the initial
+case study \(\mathcal{G}=\{F_{4(4)}\}\).  For the eventual rank-eight computation,
+\(\mathcal{G}\) includes the larger exceptional groups and the smaller groups
+that appear in the inductive structure of the classification.
+
+\section{Representative proof obligations}
+
+The current refinement stack separates the work into the following obligations.
+
+\begin{enumerate}
+\item \textbf{FFI contracts.}  The \sml bindings for \atlas{} parameter
+construction, finalization, unitarity, equality, and hashing implement the
+specified abstract operations.
+\item \textbf{Semantic equality.}  The relation \(\atlasEq\) is an equivalence
+relation and is respected by hash-table lookup and insertion.
+\item \textbf{Hash-set correctness.}  \texttt{ParamHash} represents a finite set
+of parameters modulo \(\atlasEq\), and its operations preserve the
+representation invariant.
+\item \textbf{Slow checker correctness.}  If the slow checker terminates without
+printing a counterexample, then every unitary final term in the slow domain is
+present in the expected set.
+\item \textbf{Fast checker correctness.}  The fast pipeline's enumeration,
+pruning, and bottom-layer traversal produce exactly the same semantic set as the
+abstract optimized specification.
+\item \textbf{Optimization equivalence.}  Each pruning or shortcut used by the
+fast specification is equivalent to the corresponding part of the slow
+reference search.
+\end{enumerate}
+
+This decomposition is designed to make progress possible even when the full
+large computation cannot be replicated locally.  Small cases such as \(G_2\) and
+\(F_4\) can be executed as regression tests, while the formal proof treats the
+large cases parametrically through the same contracts and equivalence lemmas.
+
+\begin{thebibliography}{10}
+
+
+
+\bibitem{ABV1992}
+J.~Adams, D.~Barbasch, and D.~A. Vogan, Jr.
+\newblock \emph{The Langlands Classification and Irreducible Characters for Real Reductive Groups}.
+\newblock Progress in Mathematics 104, Birkh\"auser, 1992.
+
+
+\bibitem{AdamsvanLeeuwenTrapaVogan2020}
+J.~Adams, M.~van Leeuwen, P.~Trapa, and D.~Vogan.
+\newblock \emph{Unitary representations of real reductive groups}.
+\newblock Ast\'erisque 417, Soci\'et\'e Math\'ematique de France, 2020.
+\newblock Preprint version: arXiv:1212.2192.
+
+\bibitem{AtlasProject}
+J.~Adams, M.~van Leeuwen, D.~Vogan, and collaborators.
+\newblock The Atlas of Lie Groups and Representations.
+\newblock \url{https://www.liegroups.org/}.
+
+
+\bibitem{DavisMasonBrownFPP}
+D.~Davis and L.~Mason-Brown.
+\newblock \emph{The FPP Conjecture for Real Reductive Groups}.
+\newblock Preprint, 2024. arXiv:2411.01372.
+
+
+
+
+\bibitem{HOL4}
+M.~J. C. Gordon and T.~F. Melham, editors.
+\newblock \emph{Introduction to HOL: A theorem proving environment for higher order logic}.
+\newblock Cambridge University Press, 1993.
+
+
+\bibitem{GreenMillerVanhove2015}
+M.~B.~Green, S.~D.~Miller, and P.~Vanhove.
+\newblock \emph{Small representations, string instantons, and Fourier modes of Eisenstein series}.
+\newblock \emph{Journal of Number Theory} \textbf{146} (2015), 187--309.
+\newblock With an appendix by D.~Ciubotaru and P.~Trapa.
+\newblock Preprint version: arXiv:1111.2983.
+
+
+\bibitem{Knapp2001}
+A.~W. Knapp.
+\newblock \emph{Representation Theory of Semisimple Groups: An Overview Based on Examples}.
+\newblock Princeton University Press, 2001.
+
+\bibitem{CakeML}
+R.~Kumar, M.~O. Myreen, M.~Norrish, and S.~Owens.
+\newblock CakeML: a verified implementation of ML.
+\newblock In \emph{Proceedings of POPL 2014}, pages 179--191, 2014.
+
+\bibitem{PolyML}
+D.~C. J. Matthews.
+\newblock Poly/ML.
+\newblock \url{https://polyml.org/}.
+
+\bibitem{SchmidVilonen2011}
+W.~Schmid and K.~Vilonen.
+\newblock \emph{Hodge theory and unitary representations of reductive Lie groups}.
+\newblock \emph{Frontiers of Mathematical Sciences}, International Press, Somerville, MA, 2011, pp.~397--420.
+\newblock Preprint version: arXiv:1206.5547.
+
+\bibitem{VoganSLnR}
+D.~A.~Vogan, Jr.
+\newblock \emph{Unitarizability of certain series of representations}.
+\newblock Annals of Mathematics \textbf{120} (1984), 141--187.
+
+\bibitem{VoganG2}
+D.~A.~Vogan, Jr.
+\newblock \emph{The unitary dual of $G_2$}.
+\newblock Inventiones Mathematicae \textbf{116} (1994), 677--791.
+
+
+
+\end{thebibliography}
+
+\end{document}
