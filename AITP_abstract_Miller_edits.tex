@@ -60,11 +60,11 @@ scaling  to  larger computations of interest such as for $E_{8(8)}$.
 
 \paragraph{Mathematical motivation:~in what ways can a group action preserve norms?}
 Lie groups and their representations (namely, the ways they act on vector spaces) appear ubiquitously in mathematics and its applications.  It was recognized already in the 1930s in Gelfand's work on dynamical systems that {\it unitary} representations -- those that preserve a norm on a Hilbert space -- play a fundamental and special role, as they were already known to do in quantum mechanics.
-
+%
 Nearly a century later, this role has spread to number theory as well, since the highly mysterious and fascinating automorphic representations are always unitary.  It has been known for over half a century how to construct and classify representations in general, but the \emph{unitary dual problem} -- to completely describe the irreducible unitary represenations -- remains as the last major unsolved problem in the representation theory of Lie groups \cite{Knapp2001}.
 
 The unitary dual of select examples of  Lie groups has been computed, to much fanfare:~perhaps most notable are David Vogan's landmark results for $SL(n,\mathbb{R})$ \cite{VoganSLnR} and the split exceptional Lie group $G_{2(2)}$ \cite{VoganG2}.  The answers in these cases are subtle and intricate, and defy extrapolation to elsewhere.  One particular group stands out as the most difficult challenge, being the largest split real group not part of an infinite family:~$E_{8(8)}$, which has dimension 248.
-
+%
 Over the last few decades progress has been made from several approaches:~applying ideas from geometric representation theory \cite{AdamsvanLeeuwenTrapaVogan2020}, string theory injected through number theory \cite{GreenMillerVanhove2015}, and Hodge theory \cite{SchmidVilonen2011,DavisMasonBrownFPP}, for example has led to results not seen directly from the classical representation-theoretic viewpoint alone.  At the same time, the \atlas project \cite{AtlasProject} created software with an {\tt is\_unitary} command that implements the algorithm in \cite{AdamsvanLeeuwenTrapaVogan2020} to decide unitarity, given enough resources.
 
 Combining methods, Adams, van Leeuwen, Miller, and Vogan have recently computed a draft candidate for the unitary dual of $E_{8(8)}$.
@@ -72,7 +72,7 @@ These lengthy calculations navigated through a maze of computational constraints
 
 \paragraph{Background: the \atlas{} software}
 The \atlas{} project \cite{AtlasProject} has developed powerful, specialized software for computations in representation theory; it has been specifically designed with the unitary dual problem in mind.  The core of the software consists of C++ libraries, which use custom data structures geared for Lie theory.  In addition, numerous scripts in the \axis{} interpreter language are available that expand upon the libraries, but which are much slower.  Much of the organization of the unitary dual project (enumeration, hashing, and deciding which of many possible optimizations to execute) is handled at the level of scripts.
-
+%
 As attractive as it would be to fully verify the code base, this is impractical since it would involve verifying most of modern representation theory.  Instead, we focus on the narrower goal of verifying that the optimizations in the unitary dual computation are mathematically appropriate and rigorous.  In particular, we assume the correctness of large parts of the software, such as its code to construct representations and check unitarity, and seek to verify the higher layer that sweeps through the space of all possible unitary representations to determine the unitary dual.
 
 For readers from programming languages or verification, the analogy is a
