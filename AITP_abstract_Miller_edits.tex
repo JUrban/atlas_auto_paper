@@ -26,6 +26,7 @@
 \setlength{\parskip}{-0pt}
 
 \geometry{top=1.0cm}
+\geometry{bottom=1.5cm}
 \renewcommand{\footnotesize}{\scriptsize}
 
 \title{\large{Autoformalizing Fast--Slow Equivalence Proofs for Atlas Computations in the Unitary Dual Problem}}
@@ -202,6 +203,7 @@ checker to obligations about domain pruning and witnessing, correctness of the
 Finally, we keep an explicit inventory of the remaining bridge obligations that
 connect actual \sml execution to the abstract predicates.
 
+\iffalse
 This top-down organization is important.  It gives a stable end-to-end theorem
 statement early, even while some low-level bridges remain assumptions.  Each
 optimization can then be isolated as a local equivalence or refinement lemma.
@@ -211,15 +213,8 @@ an already-covered witness or is mathematically known not to contribute a
 unitary final term.  This is the core reason the project is plausible even for
 large groups: we verify the correctness of the optimization principles rather
 than replaying the entire slow computation.
+\fi
 
-\paragraph{Translator plan: discharging imperative obligations in \cakeml}
-The most proof-intensive pure component is the hash-set representation used by
-the fast program.  We develop a \cakeml monadic model of \texttt{ParamHash} and
-prove its representation and invariant lemmas: lookup and insert correctness,
-bucket discipline, and membership modulo \(\atlasEq\).  The \cakeml translator
-provides a route to connect executable ML code to these lemmas, and the
-\holfour refinement stack is designed so that this evidence can be plugged in
-without changing the top-level statement.
 
 \paragraph{Auto-translation and AI assistance}
 The \texttt{.at}-to-\sml translation is large and repetitive, but sensitive to
@@ -229,13 +224,119 @@ into a compilable and documented \sml module graph, add small FFI bindings and
 tests as needed, and generate the \holfour/\cakeml refinement skeletons and
 goal inventories.  The intended output is not merely a working \sml replacement
 for a legacy script, but an automatically maintained specification of what has
-been proved and what remains as an explicit contract.  This is also where LLM
+been proved and what remains as an explicit contract.
+\iffalse
+This is also where LLM
 assistance is most useful: the model is not trusted for mathematical
 correctness, but used to accelerate translation, documentation, test generation,
 and proof-obligation discovery, all of which are checked by compilation,
 execution, or theorem proving.
 
-\paragraph{Status and outlook}
+
+\paragraph{Contributions}
+In summary, this paper proposes a verification target and architecture for a
+specific class of large-scale mathematical computations.  The contributions are:
+(i) a fast--slow equivalence formulation for \atlas{} unitary-dual scripts;
+(ii) an \axis{}-to-\sml replacement architecture exposing script-level control
+flow to proof tools; (iii) a staged \holfour/\cakeml proof plan separating
+trusted \atlas{} semantics from verified optimization logic; and (iv) a concrete
+\(F_4\) case study intended as a stepping stone toward the rank-eight Atlas
+computations.
+\fi
+
+\begin{thebibliography}{10}
+
+
+
+\bibitem{ABV1992}
+J.~Adams, D.~Barbasch, and D.~A. Vogan, Jr.
+\newblock \emph{The Langlands Classification and Irreducible Characters for Real Reductive Groups}.
+\newblock Progress in Mathematics 104, Birkh\"auser, 1992.
+
+
+\bibitem{AdamsvanLeeuwenTrapaVogan2020}
+J.~Adams, M.~van Leeuwen, P.~Trapa, and D.~Vogan.
+\newblock \emph{Unitary representations of real reductive groups}.
+\newblock Ast\'erisque 417, Soci\'et\'e Math\'ematique de France, 2020.
+\newblock Preprint version: arXiv:1212.2192.
+
+\bibitem{AtlasProject}
+J.~Adams, M.~van Leeuwen, D.~Vogan, and collaborators.
+\newblock The Atlas of Lie Groups and Representations.
+\newblock \url{https://www.liegroups.org/}.
+
+
+\bibitem{DavisMasonBrownFPP}
+D.~Davis and L.~Mason-Brown.
+\newblock \emph{The FPP Conjecture for Real Reductive Groups}.
+\newblock Preprint, 2024. arXiv:2411.01372.
+
+
+
+
+\bibitem{HOL4}
+M.~J. C. Gordon and T.~F. Melham, editors.
+\newblock \emph{Introduction to HOL: A theorem proving environment for higher order logic}.
+\newblock Cambridge University Press, 1993.
+
+
+\bibitem{GreenMillerVanhove2015}
+M.~B.~Green, S.~D.~Miller, and P.~Vanhove.
+\newblock \emph{Small representations, string instantons, and Fourier modes of Eisenstein series}.
+\newblock \emph{Journal of Number Theory} \textbf{146} (2015), 187--309.
+\newblock With an appendix by D.~Ciubotaru and P.~Trapa.
+\newblock Preprint version: arXiv:1111.2983.
+
+
+\bibitem{Knapp2001}
+A.~W. Knapp.
+\newblock \emph{Representation Theory of Semisimple Groups: An Overview Based on Examples}.
+\newblock Princeton University Press, 2001.
+
+\bibitem{CakeML}
+R.~Kumar, M.~O. Myreen, M.~Norrish, and S.~Owens.
+\newblock CakeML: a verified implementation of ML.
+\newblock In \emph{Proceedings of POPL 2014}, pages 179--191, 2014.
+
+\bibitem{PolyML}
+D.~C. J. Matthews.
+\newblock Poly/ML.
+\newblock \url{https://polyml.org/}.
+
+\bibitem{SchmidVilonen2011}
+W.~Schmid and K.~Vilonen.
+\newblock \emph{Hodge theory and unitary representations of reductive Lie groups}.
+\newblock \emph{Frontiers of Mathematical Sciences}, International Press, Somerville, MA, 2011, pp.~397--420.
+\newblock Preprint version: arXiv:1206.5547.
+
+\bibitem{VoganSLnR}
+D.~A.~Vogan, Jr.
+\newblock \emph{Unitarizability of certain series of representations}.
+\newblock Annals of Mathematics \textbf{120} (1984), 141--187.
+
+\bibitem{VoganG2}
+D.~A.~Vogan, Jr.
+\newblock \emph{The unitary dual of $G_2$}.
+\newblock Inventiones Mathematicae \textbf{116} (1994), 677--791.
+
+
+
+\end{thebibliography}
+
+
+
+\appendix
+
+\section{Translator plan: discharging imperative obligations in \cakeml}
+The most proof-intensive pure component is the hash-set representation used by
+the fast program.  We develop a \cakeml monadic model of \texttt{ParamHash} and
+prove its representation and invariant lemmas: lookup and insert correctness,
+bucket discipline, and membership modulo \(\atlasEq\).  The \cakeml translator
+provides a route to connect executable ML code to these lemmas, and the
+\holfour refinement stack is designed so that this evidence can be plugged in
+without changing the top-level statement.
+
+\section{Status and outlook}
 The fast \sml verifier for \(F_{4(4)}\) is functional and checks the expected set
 of \(1864\) parameters.  The slow checker is translated and supports bounded
 sampling.  On the formal side, the end-to-end theorem shape is fixed, the key
@@ -248,17 +349,6 @@ scale from the \(F_4\) test case to the larger rank-eight computations, where
 running the slow checker directly is infeasible but verifying the correctness
 of the optimizations is most valuable.
 
-\paragraph{Contributions}
-In summary, this paper proposes a verification target and architecture for a
-specific class of large-scale mathematical computations.  The contributions are:
-(i) a fast--slow equivalence formulation for \atlas{} unitary-dual scripts;
-(ii) an \axis{}-to-\sml replacement architecture exposing script-level control
-flow to proof tools; (iii) a staged \holfour/\cakeml proof plan separating
-trusted \atlas{} semantics from verified optimization logic; and (iv) a concrete
-\(F_4\) case study intended as a stepping stone toward the rank-eight Atlas
-computations.
-
-\appendix
 
 \section{Reference and optimized Atlas workflows}
 
@@ -349,83 +439,5 @@ large computation cannot be replicated locally.  Small cases such as \(G_2\) and
 \(F_4\) can be executed as regression tests, while the formal proof treats the
 large cases parametrically through the same contracts and equivalence lemmas.
 
-\begin{thebibliography}{10}
-
-
-
-\bibitem{ABV1992}
-J.~Adams, D.~Barbasch, and D.~A. Vogan, Jr.
-\newblock \emph{The Langlands Classification and Irreducible Characters for Real Reductive Groups}.
-\newblock Progress in Mathematics 104, Birkh\"auser, 1992.
-
-
-\bibitem{AdamsvanLeeuwenTrapaVogan2020}
-J.~Adams, M.~van Leeuwen, P.~Trapa, and D.~Vogan.
-\newblock \emph{Unitary representations of real reductive groups}.
-\newblock Ast\'erisque 417, Soci\'et\'e Math\'ematique de France, 2020.
-\newblock Preprint version: arXiv:1212.2192.
-
-\bibitem{AtlasProject}
-J.~Adams, M.~van Leeuwen, D.~Vogan, and collaborators.
-\newblock The Atlas of Lie Groups and Representations.
-\newblock \url{https://www.liegroups.org/}.
-
-
-\bibitem{DavisMasonBrownFPP}
-D.~Davis and L.~Mason-Brown.
-\newblock \emph{The FPP Conjecture for Real Reductive Groups}.
-\newblock Preprint, 2024. arXiv:2411.01372.
-
-
-
-
-\bibitem{HOL4}
-M.~J. C. Gordon and T.~F. Melham, editors.
-\newblock \emph{Introduction to HOL: A theorem proving environment for higher order logic}.
-\newblock Cambridge University Press, 1993.
-
-
-\bibitem{GreenMillerVanhove2015}
-M.~B.~Green, S.~D.~Miller, and P.~Vanhove.
-\newblock \emph{Small representations, string instantons, and Fourier modes of Eisenstein series}.
-\newblock \emph{Journal of Number Theory} \textbf{146} (2015), 187--309.
-\newblock With an appendix by D.~Ciubotaru and P.~Trapa.
-\newblock Preprint version: arXiv:1111.2983.
-
-
-\bibitem{Knapp2001}
-A.~W. Knapp.
-\newblock \emph{Representation Theory of Semisimple Groups: An Overview Based on Examples}.
-\newblock Princeton University Press, 2001.
-
-\bibitem{CakeML}
-R.~Kumar, M.~O. Myreen, M.~Norrish, and S.~Owens.
-\newblock CakeML: a verified implementation of ML.
-\newblock In \emph{Proceedings of POPL 2014}, pages 179--191, 2014.
-
-\bibitem{PolyML}
-D.~C. J. Matthews.
-\newblock Poly/ML.
-\newblock \url{https://polyml.org/}.
-
-\bibitem{SchmidVilonen2011}
-W.~Schmid and K.~Vilonen.
-\newblock \emph{Hodge theory and unitary representations of reductive Lie groups}.
-\newblock \emph{Frontiers of Mathematical Sciences}, International Press, Somerville, MA, 2011, pp.~397--420.
-\newblock Preprint version: arXiv:1206.5547.
-
-\bibitem{VoganSLnR}
-D.~A.~Vogan, Jr.
-\newblock \emph{Unitarizability of certain series of representations}.
-\newblock Annals of Mathematics \textbf{120} (1984), 141--187.
-
-\bibitem{VoganG2}
-D.~A.~Vogan, Jr.
-\newblock \emph{The unitary dual of $G_2$}.
-\newblock Inventiones Mathematicae \textbf{116} (1994), 677--791.
-
-
-
-\end{thebibliography}
 
 \end{document}
